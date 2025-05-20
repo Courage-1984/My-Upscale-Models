@@ -1,0 +1,139 @@
+#########################################################################################
+# General Settings
+#########################################################################################
+name: 2x_iconsV1_RealPLKSR
+scale: 2
+use_amp: true
+amp_bf16: false
+use_channels_last: true
+fast_matmul: false
+num_gpu: auto
+
+########################################################################################################################
+# Dataset and Dataloader Settings
+########################################################################################################################
+datasets:
+  train:
+    name: Train Dataset
+    type: pairedimagedataset
+    dataroot_gt: [C:/Users/anon/ai/training/train/hq]
+    dataroot_lq: [C:/Users/anon/ai/training/train/lq]
+
+    lq_size: 96
+    use_hflip: true
+    use_rot: true
+
+    num_worker_per_gpu: 8
+    batch_size_per_gpu: 16
+    accum_iter: 1
+  val:
+    name: Val Dataset
+    type: pairedimagedataset
+    dataroot_gt: [C:/Users/anon/ai/training/val/hq]
+    dataroot_lq: [C:/Users/anon/ai/training/val/lq]
+
+#####################################################################
+# Network Settings
+#####################################################################
+# Generator model settings
+network_g:
+  type: realplksr
+  upsampler: pixelshuffle
+  layer_norm: true
+
+# Discriminator model settings
+network_d:
+  type: dunet
+
+#########################################################################################
+# Pretrain and Resume Paths
+#########################################################################################
+path:
+  pretrain_network_g: experiments/pretrained_models/2x_DF2K_Redux_RealPLKSRLayerNorm_450k.safetensors
+  param_key_g: ~
+  strict_load_g: false
+  resume_state: ~
+
+###########################################################################################
+# Training Settings
+###########################################################################################
+train:
+  ema_decay: 0.999
+  grad_clip: false
+  optim_g:
+    type: AdamW
+    lr: !!float 1e-4
+    weight_decay: 0
+    betas: [0.9, 0.99]
+  optim_d:
+    type: AdamW
+    lr: !!float 1e-4
+    weight_decay: 0
+    betas: [0.9, 0.99]
+
+  scheduler:
+    type: MultiStepLR
+    milestones: [100000]
+    gamma: 0.5
+
+  total_iter: 100000
+  warmup_iter: -1
+
+  losses:
+    # MS-SSIM loss
+    - type: mssimloss
+      cosim: true
+      loss_weight: 1.0
+    # Perceptual loss
+    - type: perceptualloss
+      criterion: charbonnier
+      loss_weight: 0.01
+    # HSLuv loss (hue, saturation, lightness)
+    - type: hsluvloss
+      criterion: charbonnier
+      loss_weight: 1.0
+    # GAN loss
+    - type: ganloss
+      gan_type: vanilla
+      loss_weight: 0.1
+
+  # Mix of Augmentations (MoA)
+  use_moa: false
+  moa_augs: ["none", "mixup", "cutmix", "resizemix", "cutblur"]
+  moa_probs: [0.4, 0.084, 0.084, 0.084, 0.348]
+  moa_debug: false
+  moa_debug_limit: 100
+
+##############################################################################################
+# Validation
+##############################################################################################
+val:
+  val_enabled: true
+  val_freq: 2000
+  save_img: true
+
+  metrics_enabled: true
+  metrics:
+    psnr:
+      type: calculate_psnr
+      crop_border: 4
+      test_y_channel: false
+    ssim:
+      type: calculate_ssim
+      crop_border: 4
+      test_y_channel: false
+    lpips:
+      type: calculate_lpips
+      better: lower
+    dists:
+      type: calculate_dists
+      better: lower
+
+##############################################################################################
+# Logging
+##############################################################################################
+logger:
+  print_freq: 100
+  save_checkpoint_freq: 500
+  save_checkpoint_format: safetensors
+  use_tb_logger: true
