@@ -14,3 +14,5 @@ Number of train images: 27'000
 Pretrain_Network_G: 2x_DF2K_Redux_RealPLKSRLayerNorm_450k.safetensors
 
 Description: 2x upscaler for icons/logos/graphics. Trained on +- 27'000 images, datasets of 4-10k images were added or replaced the current training dataset at various iterations throughout the training (I was new to learning okey).
+
+see: [example](https://github.com/Courage-1984/My-Upscale-Models/tree/main/2x_iconsV1_RealPLKSR/examples)
