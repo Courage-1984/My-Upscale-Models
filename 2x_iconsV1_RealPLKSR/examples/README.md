@@ -1,5 +1,7 @@
 ## 2x_iconsV1_RealPLKSR
 
+Check out https://slow.pics/c/R8cdJVKH?canvas-mode=fit-height&image-fit=contain for nice and quick comparisons.
+
 ## Results:
 
 | lq input  | 2x_iconsV1_RealPLKSR |
